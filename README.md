@@ -2,8 +2,8 @@
 
 [![test](https://github.com/kerem-aydin/ajan-ofisi/actions/workflows/test.yml/badge.svg)](https://github.com/kerem-aydin/ajan-ofisi/actions/workflows/test.yml) ![dependencies: 0](https://img.shields.io/badge/dependencies-0-brightgreen) ![license: MIT](https://img.shields.io/badge/license-MIT-blue)
 
-A one-person company still needs an office. Mine runs on Telegram, and most of
-the staff are agents.
+Working alone still needs an office. Mine runs on Telegram, and most of the
+staff are agents.
 
 This repository is the skeleton of that office: the parts that are useful to
 anyone, without the parts that are mine (prompts, scoring, customer data and
