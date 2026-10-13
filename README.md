@@ -9,24 +9,18 @@ This repository is the skeleton of that office: the parts that are useful to
 anyone, without the parts that are mine (prompts, scoring, customer data and
 keys are not here and never will be). No dependencies, Node 18+.
 
+```mermaid
+flowchart TB
+  G["GOREVLER.md<br/>## A · Product<br/>- [ ] K · Call the first customer<br/>- [ ] C · Draft the offer page"]
+  G -->|09:00| M["Morning plan<br/>first open K task per section,<br/>at most three"]
+  G -->|all day| B["Background agents<br/>Codex / Claude Code, headless"]
+  B --> U["Usage guard<br/>measures real usage,<br/>yields to the owner"]
+  B --> D["Decision box<br/>question + buttons,<br/>double taps ignored"]
+  M --> T(("Telegram"))
+  D --> T
+  T <--> O["Owner"]
 ```
-                ┌────────────── GOREVLER.md ──────────────┐
-                │  ## A · Product                          │
-                │  - [ ] K · Call the first customer       │  K = needs the owner
-                │  - [ ] C · Draft the offer page          │  C = an agent can do it
-                └───────┬─────────────────────────┬────────┘
-                        │ 09:00                    │ all day
-                 morning plan                 background agents
-              (first open K per section,    (Codex / Claude Code, headless)
-                   at most three)                  │
-                        │                    usage guard ── measures real usage,
-                        ▼                          │       yields to the owner
-                  ┌──────────┐   question + buttons │
-                  │ Telegram │ ◀──────────────────── decision box
-                  └──────────┘ ──── tap ───────────▶ (stored once, double taps ignored)
-                        ▲
-                      owner
-```
+<sub>K = needs the owner · C = an agent can do it</sub>
 
 ## The three parts
 
