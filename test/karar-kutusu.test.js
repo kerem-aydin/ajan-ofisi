@@ -29,3 +29,30 @@ test("a decision needs two options; callback data stays under 64 bytes", () => {
   assert.throws(() => yeniKutu().sor("Q", ["only"]));
   assert.ok(Buffer.byteLength(dugmeVerisi("0123abcd", 99)) <= 64);
 });
+
+test("a damaged file is not treated as empty and is not overwritten", () => {
+  const dosya = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kutu-")), "k.json");
+  fs.writeFileSync(dosya, '{"0123abcd": {"soru": "Publish?", "cevap": null');
+  const k = kararKutusu(dosya);
+  assert.throws(() => k.sor("New question", ["a", "b"]), /damaged/);
+  assert.throws(() => k.bekleyenler(), /damaged/);
+  assert.equal(fs.readFileSync(dosya, "utf8"), '{"0123abcd": {"soru": "Publish?", "cevap": null', "file left untouched");
+});
+
+test("two processes asking at the same time do not lose each other's questions", async () => {
+  /* Without the lock, both read the same file, both add one question, and the
+     second write erases the first. Two real processes, 25 questions each. */
+  const dosya = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "kutu-")), "k.json");
+  const modul = new URL("../src/karar-kutusu.js", import.meta.url).href;
+  const kod = `import { kararKutusu } from ${JSON.stringify(modul)};
+    const k = kararKutusu(${JSON.stringify(dosya)});
+    for (let i = 0; i < 25; i++) k.sor("q" + i, ["a", "b"]);`;
+  const { spawn } = await import("node:child_process");
+  const calistir = () => new Promise((tamam, hata) => {
+    const p = spawn(process.execPath, ["--input-type=module", "-e", kod], { stdio: "inherit" });
+    p.on("exit", (c) => (c === 0 ? tamam() : hata(new Error("exit " + c))));
+  });
+  await Promise.all([calistir(), calistir()]);
+  assert.equal(kararKutusu(dosya).bekleyenler().length, 50);
+  assert.ok(!fs.existsSync(dosya + ".lock"), "lock released");
+});

@@ -8,11 +8,14 @@ const PARCA = 3900; // Telegram's hard limit is 4096 characters per message
 export function telegram(token, { fetchFn = fetch } = {}) {
   if (!token) throw new Error("telegram: token missing (read it from the environment, never from code)");
 
-  async function cagir(yontem, govde) {
+  /* Every call has a deadline. Without one, a network that hangs instead of
+     failing keeps the office waiting forever and nothing reports it. */
+  async function cagir(yontem, govde, { zamanAsimiMs = 15_000 } = {}) {
     const r = await fetchFn(`${API}/bot${token}/${yontem}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(govde),
+      signal: AbortSignal.timeout(zamanAsimiMs),
     });
     const j = await r.json();
     if (!j.ok) throw new Error(`telegram ${yontem}: ${j.description}`);
@@ -44,11 +47,25 @@ export function telegram(token, { fetchFn = fetch } = {}) {
       });
     },
 
-    /** Long polling. Yields updates forever; `offset` makes each one arrive exactly once. */
-    async *dinle({ bekleme = 50, turler = ["message", "callback_query"] } = {}) {
-      let offset = 0;
+    /**
+     * Long polling. Yields updates forever; `offset` makes each one arrive
+     * exactly once. A failed poll (network down, Telegram busy) is retried with
+     * a growing pause instead of ending the loop.
+     */
+    async *dinle({ bekleme = 50, turler = ["message", "callback_query"], hataBildir = () => {} } = {}) {
+      let offset = 0, ara = 1000;
       for (;;) {
-        const gelen = await cagir("getUpdates", { offset, timeout: bekleme, allowed_updates: turler });
+        let gelen;
+        try {
+          gelen = await cagir("getUpdates", { offset, timeout: bekleme, allowed_updates: turler },
+            { zamanAsimiMs: (bekleme + 15) * 1000 });
+          ara = 1000;
+        } catch (e) {
+          hataBildir(e);
+          await new Promise((r) => setTimeout(r, ara));
+          ara = Math.min(ara * 2, 60_000);
+          continue;
+        }
         for (const g of gelen) {
           offset = g.update_id + 1;
           yield g;

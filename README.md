@@ -28,8 +28,10 @@ flowchart TB
 
 People and agents edit the same file. Sections are `## A · Name`, tasks are
 `- [ ] K · …` (needs the owner) or `- [ ] C · …` (an agent can do it). Order is
-priority. Every morning the owner gets only the first open **K** task of each
-section, at most three:
+priority. The morning message holds only the first open **K** task of each
+section, at most three. Sending it every morning is a scheduled job of your
+choice (cron, Task Scheduler, a GitHub Actions schedule) running
+`node ornek/ofis.mjs sabah`:
 
 ```js
 import { sabahPlani, sabahMesaji } from "./src/index.js";
@@ -61,6 +63,11 @@ Button data carries only an 8-character id and an index (Telegram allows 64
 bytes). A second tap returns `null`. People double-tap on phones, and the second tap should not run the action again.
 The example only accepts taps from the owner's chat.
 
+Every read-change-write happens under a lock file, so the listener and a script
+asking a new question at the same moment cannot erase each other's change (a
+test runs two real processes against one file). A damaged decision file throws
+instead of being read as empty and overwritten.
+
 ### 3. Usage guard for background coding agents
 
 This part exists because of a real failure.
@@ -78,11 +85,15 @@ Three rules came out of it:
    `claude -p --output-format stream-json --verbose` emits a
    `rate_limit_event` with `unifiedWindows.five_hour.utilization`. A one-word
    run on the smallest model is enough to read it.
-2. **Background work gets the smaller share.** It starts only below 40% and
-   stops itself at 55%.
+2. **Background work gets the smaller share.** The policy says start only
+   below 40% and stop at 55%.
 3. **The owner comes first.** If the owner's interactive session was active in
-   the last 30 minutes, background agents do not start, and running ones stop
-   and resume later from their own progress files.
+   the last 30 minutes, the policy says do not start, and stop what is running.
+
+This module is the measuring and the decision. Acting on it is the caller's
+job: my scheduler runs it every few minutes and kills the agent on `durdur`;
+the agents I run write progress files, so the next `basla` continues where
+they stopped.
 
 ```js
 const kullanim = kullanimiOlc();            // { besSaat: 13, haftalik: 21, sifirlanma: … }
@@ -94,7 +105,7 @@ The policy is one pure function, so it is tested without a network.
 ## Try it
 
 ```bash
-npm test                                             # 11 tests, no network
+npm test                                             # 15 tests, no network
 node ornek/ofis.mjs olc                              # needs the claude CLI
 TG_TOKEN=… TG_SOHBET=… node ornek/ofis.mjs sabah ornek/GOREVLER.md
 TG_TOKEN=… TG_SOHBET=… node ornek/ofis.mjs sor "Publish?" Yes No
