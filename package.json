@@ -1,0 +1,11 @@
+{
+  "name": "ajan-ofisi",
+  "version": "0.1.0",
+  "description": "A one-person office run by agents on Telegram: morning plan from a Markdown task list, a decision box with buttons, and a usage guard that keeps background coding agents from eating the owner's subscription. No dependencies.",
+  "type": "module",
+  "main": "src/index.js",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node --test test/*.test.js" },
+  "keywords": ["telegram", "agents", "automation", "claude-code", "codex", "rate-limit", "turkish"]
+}

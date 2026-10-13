@@ -1,0 +1,4 @@
+node_modules/
+ornek/kararlar.json
+*.tmp
+.env
